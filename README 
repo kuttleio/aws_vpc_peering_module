@@ -1,0 +1,49 @@
+# aws_vpc_peering
+
+
+A peering connection is established between 2 VPCs.<br>
+The initiator of the peering connection is known here as "requestor" in most cases `SharedServices VPC`<br>
+Environment VPC prod/dev/staging is known as "accepter"<br>
+
+
+Example of use:
+```
+data "terraform_remote_state" "requestor_vpc" {
+  backend = "s3"
+
+  config {
+    bucket   = "${var.default_state_bucket}"
+    key      = "terraform/deployment/accounts/${var.requestor_account}/${var.default_region}/vpc/networking/vpc_base/terraform.tfstate"
+    region   = "${var.default_region}"
+    role_arn = "${var.provider_role_arn}"
+  }
+}
+
+data "terraform_remote_state" "accepter_vpc" {
+  backend = "s3"
+
+  config {
+    bucket   = "${var.default_state_bucket}"
+    key      = "terraform/deployment/accounts/${var.accepter_account}/${var.default_region}/vpc/networking/vpc_base/terraform.tfstate"
+    region   = "${var.default_region}"
+    role_arn = "${var.accepter_role_arn}"
+  }
+}
+
+module "aws_vpc_peering" {
+  source = "../../../../../modules/aws_vpc_peering/"
+
+  aws_requester_account         = "${var.requestor_account}"
+  aws_accepter_account          = "${var.accepter_account}"
+  aws_requester_provider_region = "${var.default_region}"
+  aws_requester_role_arn        = "${var.provider_role_arn}"
+  aws_accepter_provider_region  = "${var.default_region}"
+  aws_accepter_role_arn         = "${var.accepter_role_arn}"
+  accepter_account_id           = "${element(split(":", var.accepter_role_arn),4)}"
+  requester_vpc_id              = "${data.terraform_remote_state.requestor_vpc.vpc_id}"
+  accepter_vpc_id               = "${data.terraform_remote_state.accepter_vpc.vpc_id}"
+  requestor_route_tables        = "${concat(data.terraform_remote_state.requestor_vpc.public_routes,data.terraform_remote_state.requestor_vpc.private_routes)}"
+  accepter_route_tables         = "${concat(data.terraform_remote_state.accepter_vpc.public_routes,data.terraform_remote_state.accepter_vpc.private_routes)}"
+}
+
+```

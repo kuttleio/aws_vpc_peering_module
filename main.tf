@@ -13,7 +13,7 @@ resource "aws_vpc_peering_connection" "main" {
   peer_vpc_id   = var.accepter_vpc_id
   peer_region   = var.aws_accepter_provider_region
   vpc_id        = var.requester_vpc_id
-  tags          = merge(var.tags, map("Name", "VPC Peering between ${var.aws_requester_account} [${var.requester_vpc_id}-${var.aws_requester_provider_region}] and ${var.aws_accepter_account} [${var.accepter_vpc_id}-${var.aws_accepter_provider_region}]"))
+  tags          = merge(var.tags, tomap({"Name", "VPC Peering between ${var.aws_requester_account} [${var.requester_vpc_id}-${var.aws_requester_provider_region}] and ${var.aws_accepter_account} [${var.accepter_vpc_id}-${var.aws_accepter_provider_region}]"}))
   auto_accept   = false
 }
 
@@ -23,7 +23,7 @@ resource "aws_vpc_peering_connection_accepter" "main" {
   provider                  = aws.accepter
   vpc_peering_connection_id = aws_vpc_peering_connection.main.id
   auto_accept               = true
-  tags                      = merge(var.tags, map("Name", "VPC Peering between ${var.aws_requester_account} [${var.requester_vpc_id}] and ${var.aws_accepter_account} [${var.accepter_vpc_id}]"))
+  tags                      = merge(var.tags, tomap({"Name", "VPC Peering between ${var.aws_requester_account} [${var.requester_vpc_id}] and ${var.aws_accepter_account} [${var.accepter_vpc_id}]"}))
 }
 
 /*
